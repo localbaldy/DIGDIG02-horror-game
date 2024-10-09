@@ -21,6 +21,7 @@ public class EnemyCollision : MonoBehaviour
             if (enemyAI != null)
             {
                 enemyAI.StartJumpscare(); // Start the jumpscare in EnemyAI
+                Debug.Log("nuddar spelare");
             }
             // Optionally, you can disable or reset other components here
         }

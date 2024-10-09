@@ -20,7 +20,7 @@ public class EnemyAI : MonoBehaviour
     AudioSource footstepAudio; // Footstep sound source
     public string walkAnim = "Walk";  // Name of the walk animation
     public string runAnim = "Run";    // Name of the run animation
-
+    public Transform player;
     private bool isJumpscaring = false; // Flag to check if jumpscare is active
 
     void Start()
@@ -29,11 +29,14 @@ public class EnemyAI : MonoBehaviour
         enemySpeed = normalSpeed;
         enemyAnimation = theEnemy.GetComponent<Animation>(); // Using Animation instead of Animator
         footstepAudio = theEnemy.GetComponent<AudioSource>(); // Make sure there's an AudioSource attached to theEnemy
+
     }
 
     void Update()
     {
         if (isJumpscaring) return; // Skip updates if jumpscare is active
+                                   // Updatera players position konstant
+        stalkerAgent.SetDestination(player.position);
 
         stalkerAgent.SetDestination(stalkerDes.transform.position);
 
@@ -78,6 +81,19 @@ public class EnemyAI : MonoBehaviour
 
         // Move enemy towards player
         transform.position = Vector3.MoveTowards(transform.position, stalkerDes.transform.position, enemySpeed);
+
+
+        // Se till så att enemy hela tiden rör sig även om det inte finns en direkt väg, aka player inte rör sig
+        if (stalkerAgent.remainingDistance > stalkerAgent.stoppingDistance)
+        {
+            stalkerAgent.isStopped = false;
+        }
+        else
+        {
+            // Enemy är fast och kan inte nå player, rör sig till den hittar en väg
+            stalkerAgent.isStopped = true;
+            Wander();
+        }
     }
 
     bool IsPlayerInSight()
@@ -93,6 +109,7 @@ public class EnemyAI : MonoBehaviour
                 if (hit.transform == stalkerDes.transform)
                 {
                     return true; // Player is within sight
+                    Debug.Log("den ser dig");
                 }
             }
         }
@@ -105,4 +122,19 @@ public class EnemyAI : MonoBehaviour
         footstepAudio.Stop(); // Stop footsteps audio if playing
         // Optionally, you can add other jumpscare-related code here
     }
+
+    void Wander()
+    {
+        // Generera random punkter enemy kan röra sig i tills den hittar player igen
+        Vector3 randomDirection = Random.insideUnitSphere * 5f;
+        randomDirection += transform.position;
+        NavMeshHit hit;
+
+        if (NavMesh.SamplePosition(randomDirection, out hit, 5f, 1))
+        {
+            stalkerAgent.SetDestination(hit.position);
+        }
+    }
+
+
 }
