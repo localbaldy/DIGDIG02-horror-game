@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class PlayerMove : MonoBehaviour
 {
@@ -11,35 +12,76 @@ public class PlayerMove : MonoBehaviour
     public float groundDistance = 0.4f;
     public LayerMask groundMask;
     bool isGrounded;
-    private const float walkSpeed = 5f; //dela upp speed i två olika värden så vi har ett får att gå och ett för att sprinta
-    private const float runSpeed = 10f;
+    private const float walkSpeed = 5f; // Walk speed
+    private const float runSpeed = 10f; // Run speed
+    public GameObject Player;
+    public GameObject Walking;
+    public GameObject Running;
+
+    private AudioSource walkingAudio;
+    private AudioSource runningAudio;
+
+    void Start()
+    {
+        walkingAudio = Walking.GetComponent<AudioSource>();
+        runningAudio = Running.GetComponent<AudioSource>();
+    }
 
     void Update()
     {
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
+
         if (isGrounded && velocity.y < 0)
         {
-            velocity.y = -2f; //minus två så den inte registrerar innan vi nått marken
+            velocity.y = -2f;
         }
-        float x = Input.GetAxis("Horizontal"); //Gå med WASD
-        float z = Input.GetAxis("Vertical"); //Gå med WASD
-        Vector3 move = transform.right * x + transform.forward * z; //Rör sig i den riktningen som player också tittar i
+
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
+        Vector3 move = transform.right * x + transform.forward * z;
         controller.Move(move * moveSpeed * Time.deltaTime);
-        //Ref till vår character controller som driver vår player + låter oss röra på oss
+
         if (Input.GetButtonDown("Jump") && isGrounded)
         {
-            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity); //Så vi kan hoppa
+            // Uncomment if jumping logic is needed
+            // velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
+
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
-        if (Input.GetKey(KeyCode.LeftShift))
-        { //rör oss snabbare med shift tangenten
 
-            moveSpeed = runSpeed;
+        if (move.magnitude > 0 && isGrounded)
+        {
+            if (Input.GetKey(KeyCode.LeftShift))
+            {
+                // Running
+                moveSpeed = runSpeed;
+
+                if (!runningAudio.isPlaying)
+                {
+                    runningAudio.Play();  // Start running sound
+                }
+
+                walkingAudio.Stop();      // Stop walking sound if playing
+            }
+            else
+            {
+                // Walking
+                moveSpeed = walkSpeed;
+
+                if (!walkingAudio.isPlaying)
+                {
+                    walkingAudio.Play();  // Start walking sound
+                }
+
+                runningAudio.Stop();      // Stop running sound if playing
+            }
         }
         else
         {
-            moveSpeed = walkSpeed;
+            // Stop both sounds when not moving
+            walkingAudio.Stop();
+            runningAudio.Stop();
         }
     }
 }
